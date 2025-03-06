@@ -21,7 +21,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={urban.className}>
         <Providers>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
             {children}
           </ThemeProvider>
         </Providers>
