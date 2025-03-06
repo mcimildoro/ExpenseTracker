@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import { ExpenseModal } from "@/components/expense-modal"
@@ -14,9 +14,25 @@ import { PlusCircle, LogOut } from "lucide-react"
 
 export function DashboardPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const { data: session } = useSession()
-  const router = useRouter()
+
   const [refreshTrigger, setRefreshTrigger] = useState(false); 
+  const { data: session, status } = useSession()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login")
+    }
+  }, [router, status])
+
+  if (status === "loading") {
+    return <p>Loading...</p>
+  }
+
+  if (!session) {
+    return null
+  }
+
 
   const refreshExpenses = async () => {
     setRefreshTrigger((prev) => !prev);
