@@ -14,7 +14,6 @@ import { PlusCircle, LogOut } from "lucide-react"
 
 export function DashboardPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
-
   const [refreshTrigger, setRefreshTrigger] = useState(false); 
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -33,15 +32,15 @@ export function DashboardPage() {
     return null
   }
 
+  const handleLogout = async () => {
+    await signOut({ redirect: false })
+    router.push("/login")
+  }
 
   const refreshExpenses = async () => {
     setRefreshTrigger((prev) => !prev);
   };
 
-  const handleLogout = async () => {
-    await signOut({ redirect: false })
-    router.push("/login")
-  }
 
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
@@ -87,12 +86,8 @@ export function DashboardPage() {
       <ExpenseModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onEditComplete={async () => {
-          router.refresh()
-        }}
-        onExpenseAdded={async () => {
-          router.refresh()
-        }}
+        onEditComplete={refreshExpenses}
+        onExpenseAdded={refreshExpenses}
         expenseToEdit={null}
       />
     </div>
