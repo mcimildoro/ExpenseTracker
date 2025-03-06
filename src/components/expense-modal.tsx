@@ -28,7 +28,7 @@ export function ExpenseModal({ isOpen, onClose, onExpenseAdded, onEditComplete, 
     amount: "",
     category: "",
     isShared: true,
-    paidBy: "",
+    paidBy: "User",
   })
 
   // Populate form data when editing
@@ -39,7 +39,7 @@ export function ExpenseModal({ isOpen, onClose, onExpenseAdded, onEditComplete, 
         amount: expenseToEdit.amount.toString(),
         category: expenseToEdit.category,
         isShared: expenseToEdit.isShared,
-        paidBy: expenseToEdit.userId || "", // Use userId instead of paidBy name
+        paidBy: expenseToEdit.userId || "", // Default to empty string if userId is null
       })
     } else {
       // Reset form when adding new expense
@@ -47,7 +47,7 @@ export function ExpenseModal({ isOpen, onClose, onExpenseAdded, onEditComplete, 
         description: "",
         amount: "",
         category: "",
-        isShared: true,
+        isShared: false,
         paidBy: "",
       })
     }
@@ -199,7 +199,7 @@ export function ExpenseModal({ isOpen, onClose, onExpenseAdded, onEditComplete, 
               <Switch
                 id="isShared"
                 checked={formData.isShared}
-                onCheckedChange={(checked) => handleChange("isShared", checked)}
+                onCheckedChange={(checked) => handleChange("isShared" , checked)}
               />
               <Label htmlFor="isShared">{formData.isShared ? "Shared between both" : "Personal expense"}</Label>
             </div>
