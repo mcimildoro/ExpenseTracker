@@ -19,6 +19,7 @@ export function ExpenseSummary() {
           // Change from user.name to user.id
           const data = await getSummary(session.user.id)
           console.log("data", data)
+        
           setSummary(data)
         }
       } catch (error) {

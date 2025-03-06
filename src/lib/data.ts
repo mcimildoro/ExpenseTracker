@@ -64,6 +64,10 @@ export async function getSummary(userId: string): Promise<ExpenseSummaryData> {
     // Get all expenses (shared + user's personal)
     const allExpenses = await getExpenses(userId)
 
+    const allUsers = await getUsers()
+    const totalUsers = allUsers.length || 1;
+    
+
     const filterByDate = (expense: Expense) => {
       if (!expense.createdAt) return false
       return new Date(expense.createdAt) >= firstDayOfMonth
@@ -86,7 +90,7 @@ export async function getSummary(userId: string): Promise<ExpenseSummaryData> {
       .filter((expense) => expense.userId === userId)
       .reduce((sum, expense) => sum + expense.amount, 0)
 
-    const balance = youPaidShared - totalShared / 2
+    const balance = youPaidShared - totalShared / totalUsers;
 
     return {
       totalShared,
