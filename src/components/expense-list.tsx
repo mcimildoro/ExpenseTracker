@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { getExpenses } from "@/lib/data"
+import { getExpenses, getUsers } from "@/lib/data"
 import type { Expense } from "@/lib/types"
 import { ExpenseModal } from "./expense-modal"
 import { deleteExpense } from "@/lib/actions"
@@ -30,28 +30,53 @@ export function ExpenseList({ filter, onRefresh }: ExpenseListProps) {
   // 🔥 Cargar los gastos cuando el componente se monta
   useEffect(() => {
     const fetchExpenses = async () => {
-      setLoading(true)
+      setLoading(true);
       try {
         if (session?.user?.id) {
-          const data = await getExpenses(session.user.id)
-          setExpenses(data)
+          // Obtener gastos y usuarios al mismo tiempo
+          const [expensesData, usersData] = await Promise.all([
+            getExpenses(session.user.id),
+            getUsers()
+          ]);
+  
+         
+  
+          // Crear un mapa de userId -> userName
+          const userMap = usersData.reduce((acc, user) => {
+            acc[user.id] = user.name;  // Almacena el nombre con el ID del usuario
+            return acc;
+          }, {} as Record<string, string>);
+  
+          // Actualizar los gastos con los nombres correctos en `paidBy`
+          const updatedExpenses = expensesData.map((expense) => ({
+            ...expense,
+            paidBy: userMap[expense.userId] || "Unknown", // 🔥 Usamos `expense.userId` en lugar de `expense.paidBy`
+          }));
+  
+   
+  
+          setExpenses(updatedExpenses);
         }
       } catch (error) {
-        console.error("Failed to fetch expenses:", error)
+        console.error("Failed to fetch expenses:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-
-    fetchExpenses()
-  }, [session?.user?.id])
+    };
+  
+    fetchExpenses();
+  }, [session?.user?.id]);
+  
+  
 
   const filteredExpenses = expenses
     .filter((expense) => {
       if (filter === "shared") return expense.isShared
       if (filter === "personal") {
+        // Show personal expenses only if they belong to the current user
         return !expense.isShared && expense.userId === session?.user?.id
       }
+      // In "all" tab, show shared expenses and user's personal expenses
       return expense.isShared || expense.userId === session?.user?.id
     })
     .filter((expense) => {
@@ -63,6 +88,7 @@ export function ExpenseList({ filter, onRefresh }: ExpenseListProps) {
       const expenseMonth = expense.createdAt ? new Date(expense.createdAt).getMonth().toString() : ""
       return expenseMonth === monthFilter
     })
+  
 
   const handleEdit = (expense: Expense) => {
     // TODO: Implement edit functionality
@@ -125,7 +151,6 @@ export function ExpenseList({ filter, onRefresh }: ExpenseListProps) {
     )
   }
 
-  
 
 
   return (

@@ -17,25 +17,37 @@ export function ExpenseCharts() {
 
   useEffect(() => {
     const fetchChartData = async () => {
-      setLoading(true)
+      setLoading(true);
       try {
-        if (session?.user?.name) {
+        if (session?.user?.id) {
           const [monthlyExpenses, categoryExpenses] = await Promise.all([
-            getMonthlyExpenses(Number.parseInt(year), session.user.name),
-            getCategoryExpenses(Number.parseInt(year), session.user.name),
-          ])
-          setMonthlyData(monthlyExpenses)
-          setCategoryData(categoryExpenses)
-        }
-      } catch (error) {
-        console.error("Failed to fetch chart data:", error)
-      } finally {
-        setLoading(false)
-      }
-    }
+            getMonthlyExpenses(Number.parseInt(year), session.user.id),
+            getCategoryExpenses(Number.parseInt(year), session.user.id),
+          ]);
+  
+          
+          console.log("📊 Monthly Data from API:", monthlyExpenses);
 
-    fetchChartData()
-  }, [year, session?.user?.name])
+            // 🔥 Asegurar que todos los meses del año están presentes
+            const filledMonthlyExpenses = Array.from({ length: 12 }, (_, i) => {
+              const found = monthlyExpenses.find((entry) => entry.month === i);
+              return found || { month: i, amount: 0 }; // Si no hay datos, poner 0
+            });
+
+            console.log("✅ Processed Monthly Data:", filledMonthlyExpenses);
+            setMonthlyData(filledMonthlyExpenses);
+            setCategoryData(categoryExpenses);
+            }
+        } catch (error) {
+          console.error("Failed to fetch chart data:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+    fetchChartData();
+  }, [year, session?.user?.id]);
+  
 
   // Find the maximum value for scaling the charts
   const maxMonthlyValue = Math.max(...monthlyData.map((d) => d.amount), 1)
@@ -73,12 +85,12 @@ export function ExpenseCharts() {
       </Card>
     )
   }
-
+console.log("item:", monthlyData)
   return (
     <Card>
       <CardHeader className="pb-2">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-          <CardTitle>Expense Analysis</CardTitle>
+          <CardTitle className="pb-2">Expense Analysis</CardTitle>
           <Select value={year} onValueChange={setYear}>
             <SelectTrigger className="w-[120px]">
               <SelectValue placeholder="Year" />

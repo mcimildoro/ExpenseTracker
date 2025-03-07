@@ -17,9 +17,7 @@ export function ExpenseSummary() {
       try {
         if (session?.user?.id) {
           // Change from user.name to user.id
-          const data = await getSummary(session.user.id)
-          console.log("data", data)
-        
+          const data = await getSummary(session.user.id)       
           setSummary(data)
         }
       } catch (error) {
@@ -50,7 +48,7 @@ export function ExpenseSummary() {
       </div>
     )
   }
-  console.log("sumary",summary)
+
   if (!summary) return null
   
   return (

@@ -17,9 +17,7 @@ export async function getUsers(): Promise<UsersType[]> {
 
 export async function getExpenses(userId?: string): Promise<Expense[]> {
   try {
-    // If no userId is provided, return an empty array
-    if (!userId) return []
-
+    if (!userId) return [];
 
     const results = await db
       .select({
@@ -28,31 +26,35 @@ export async function getExpenses(userId?: string): Promise<Expense[]> {
         amount: expenses.amount,
         category: expenses.category,
         isShared: expenses.isShared,
-        paidById: expenses.paidBy,
-        paidByName: users.name,
+        paidById: expenses.paidBy, // 🔥 Obtenemos el ID del pagador
+        paidByName: users.name, // 🔥 Obtenemos el nombre del pagador
         createdAt: expenses.createdAt,
       })
       .from(expenses)
-      .leftJoin(users, eq(expenses.id, users.id))
-      // Only fetch shared expenses OR personal expenses that belong to the current user
+      .leftJoin(users, eq(expenses.paidBy, users.id)) // ✅ Relación corregida
       .where(or(eq(expenses.isShared, true), eq(expenses.userId, userId.toString())))
-      .orderBy(desc(expenses.createdAt))
+      .orderBy(desc(expenses.createdAt));
 
-    return results.map((expense) => ({
+    const mappedExpenses = results.map((expense) => ({
       id: Number(expense.id),
       description: expense.description,
       amount: expense.amount,
       category: expense.category,
       isShared: expense.isShared,
-      paidBy: expense.paidByName || "Unknown",
+      paidBy: expense.paidByName || "Unknown", // 🔥 Aquí debería aparecer el nombre
       userId: expense.paidById,
       createdAt: expense.createdAt ? new Date(expense.createdAt).toISOString() : new Date().toISOString(),
-    }))
+    }));
+
+    console.log("🚀 Expenses after mapping:", mappedExpenses); // 🔥 Verifica si `paidBy` muestra nombres
+
+    return mappedExpenses;
   } catch (error) {
-    console.error("Failed to fetch expenses:", error)
-    return []
+    console.error("Failed to fetch expenses:", error);
+    return [];
   }
 }
+
 
 export async function getSummary(userId: string): Promise<ExpenseSummaryData> {
   try {
@@ -117,41 +119,83 @@ export async function getSummary(userId: string): Promise<ExpenseSummaryData> {
 
 export async function getMonthlyExpenses(year: number, userId: string): Promise<MonthlyExpense[]> {
   try {
-    const results = await db.execute(`
+    console.log("🔍 Debugging getMonthlyExpenses...");
+    console.log("📆 Year:", year);
+    console.log("👤 User ID:", userId);
+
+    const query = `
       SELECT EXTRACT(MONTH FROM created_at) AS month, SUM(amount) AS amount
       FROM expenses
-      WHERE EXTRACT(YEAR FROM created_at) = ${year} AND "userId" = ${userId}
+      WHERE EXTRACT(YEAR FROM created_at) = ${year} AND "user_id" = '${userId}'
       GROUP BY EXTRACT(MONTH FROM created_at)
       ORDER BY month;
-    `)
+    `;
 
-    return results.rows.map((row) => ({
-      month: Number(row[0]) - 1,
-      amount: Number(row[1]),
-    }))
+    console.log("🛠 SQL Query:", query);
+
+    const results = await db.execute(query);
+    
+    console.log("📊 Raw DB Results:", results.rows); // <-- Verifica lo que llega de la DB
+
+    if (!results.rows || results.rows.length === 0) {
+      console.warn("⚠️ No data returned from database");
+    }
+
+    // Si no hay datos, devolvemos un array vacío
+    if (!results.rows || results.rows.length === 0) {
+      return [];
+    }
+
+    // Mapeamos los resultados asegurando que month y amount sean valores numéricos correctos
+    const mappedData = results.rows.map((row, index) => {
+      const month = Number(row.month) - 1; // Convierte a número correctamente
+      const amount = Number(row.amount); // Convierte el monto a número
+      
+      console.log(`📌 Mapped Row [${index}]:`, { month, amount });
+
+      return { month, amount };
+    });
+
+    console.log("✅ Final Mapped Monthly Data:", mappedData);
+
+    return mappedData;
   } catch (error) {
-    console.error("Failed to fetch monthly expenses:", error)
-    return []
+    console.error("❌ Failed to fetch monthly expenses:", error);
+    return [];
   }
 }
+
+
 
 export async function getCategoryExpenses(year: number, userId: string): Promise<CategoryExpense[]> {
   try {
-    const results = await db.execute(`
+    console.log("🔍 Debugging getCategoryExpenses...");
+    console.log("📆 Year:", year);
+    console.log("👤 User ID:", userId);
+
+    const query = `
       SELECT category, SUM(amount) AS amount
       FROM expenses
-      WHERE EXTRACT(YEAR FROM created_at) = ${year} AND "userId" = ${userId}
+      WHERE EXTRACT(YEAR FROM created_at) = ${year} AND "user_id" = '${userId}'
       GROUP BY category
       ORDER BY amount DESC;
-    `)
+    `;
 
-    return results.rows.map((row) => ({
-      category: String(row[0]),
-      amount: Number(row[1]),
-    }))
+    console.log("🛠 SQL Query:", query);
+
+    const results = await db.execute(query);
+
+    const mappedResults = results.rows.map((row) => ({
+      category: String(row.category), // ✅ Ahora obtiene el nombre de la categoría
+      amount: Number(row.amount),
+    }));
+
+    console.log("✅ Final Mapped Category Data:", mappedResults);
+    return mappedResults;
   } catch (error) {
-    console.error("Failed to fetch category expenses:", error)
-    return []
+    console.error("❌ Failed to fetch category expenses:", error);
+    return [];
   }
 }
+
 
